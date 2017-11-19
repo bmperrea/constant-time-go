@@ -1,2 +1,86 @@
 # constant-time-go
 A repository for testing constant time approaches to programming in go
+
+This was made for analyzing constant time implementations of comparisons in go
+particularly for use in [github.com/btcsuite/btcd/btcec](https://github.com/btcsuite/btcd/tree/master/btcec)
+
+## Intro
+
+Constant time implementations are useful in cryptography where attacks based on runtime have been shown to
+completely break the security of otherwise secure algorithms. To achieve this the most accepted approach
+is to write logic directly in terms of bitwise operations, avoiding different code branches that take
+significantly longer time than others. To aid in this endeavor, golang provides the library [crypto/subtle](https://golang.org/src/crypto/subtle/constant_time.go),
+which gives reference implementations of pure bitwise comparison functions and other basic tools.
+
+for example
+```
+func ConstantTimeLessThanUint32(x, y uint32) uint32 {
+	xs := int64(x)
+	ys := int64(y)
+	// the msb keeps the sign
+	return uint32(((xs - ys) >> 63) & 1)
+}
+```
+
+An even more subtle timing issue that is solved by crypto/subtle is that of branch prediction. By
+returning integers instead of boolean data, cyrpto/subtle sets one up for further bitwise operations
+avoiding using branching statements at all like if, else.
+
+Nonetheless, libraries like btcd often use another apporach to constant time by using branch statments
+that take the same amount of compute time. This can be much faster than computing every branch every
+time, but has also been shown to be susceptible to timing attacks due to the existence of branch prediction
+at the processor level, which can make unusual branches take more compute time.
+
+for example
+```
+func BranchingLessThanUint32(x, y uint32) uint32 {
+   	result := uint32(1)
+   	if x < y {
+   		result &= 1
+   	} else {
+   		result &= 0
+   	}
+   	return result
+   }
+}
+```
+
+Using such a same-time branch approach is often preferrable because it can make for much faster compute,
+without sacrificing too much in terms of non-constant run time. This repo analyzes these different
+approaches to pin down how much compute time is saved by using same-time branches in place of the
+constant time comparators in crypto/subtle.
+
+Note - these problems could be solved in a simple way if there was a native golang way to cast a bool
+to an integer so that one could use internal comparators (<, ==) with only one additional operation
+to continue with bitwise logic. Unfortunately, in the effort to keep go to a minimal feature set, the
+creators of go have agreed not to support this. It would be interesting to try to acheive a more
+reliably constant time bool->int function using golang assembly
+
+## Results
+
+```
+$ go test --bench mark --benchtime=80ms
+goos: darwin
+goarch: amd64
+pkg: github.com/bmperrea/constant-time-go
+BenchmarkConstantTimeLessThanUint32-8   	100000000	         1.00 ns/op
+BenchmarkBranchingLessThanUint32-8      	100000000	         0.98 ns/op
+BenchmarkConstantTimeLessOrEqUint32-8   	100000000	         1.09 ns/op
+BenchmarkBranchingLessOrEqUint32-8      	100000000	         1.06 ns/op
+BenchmarkConstantTimeEqUint32-8         	50000000	         2.15 ns/op
+BenchmarkBranchingEqUint32-8            	100000000	         0.98 ns/op
+BenchmarkConstantTimeSelectUint32-8     	100000000	         1.01 ns/op
+BenchmarkBranchingSelectUint32-8        	100000000	         0.94 ns/op
+BenchmarkNothingUint32-8                	200000000	         0.55 ns/op
+PASS
+ok  	github.com/bmperrea/constant-time-go	40.696s
+```
+
+So - the overhead of the loop is pretty high, but even when we take that away, the branching case gives us for 
+the less than and lessOrEqual functions, as sell as selection, but results in a sizable speedup for equality checks. 
+In particular, after subtracting the control benchmark we get a slow down factor of (2.15 - .55) / (.98 - .55) ~ 3.7.
+
+Conclusion: I recommend using the `crypto/subtle` functions instead of using branching for most situations
+    since the additional computation cost is most often immeasurable, and one avoids the possibility of
+    timing attacks based on branch prediction. The only exception is with equality checks - one might want to 
+    using a branching statement to convert (a==b) to an integer before doing more bitwise operations on the result.
