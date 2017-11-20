@@ -17,19 +17,17 @@ var (
 func ConstantTimeSelectUint32(v, x, y uint32) uint32 { return ^(v-1)&x | (v-1)&y }
 
 func ConstantTimeLessThanUint32(x, y uint32) uint32 {
-	xs := int64(x)
-	ys := int64(y)
-	return uint32(((xs - ys) >> 63) & 1)
+	diff := int64(x) - int64(y)
+	return uint32((diff >> 63) & 1)
 }
 
 func ConstantTimeLessOrEqUint32(x, y uint32) uint32 {
-	xs := int64(x)
-	ys := int64(y)
-	return uint32(((xs - ys - 1) >> 63) & 1)
+	diff := int64(x) - int64(y)
+	return uint32(((diff - 1) >> 63) & 1)
 }
 
 // ConstantTimeEq returns 1 if x == y and 0 otherwise.
-func ConstantTimeEqUint32(x, y uint32) uint32 {
+func ConstantTimeEqUint32Alternate(x, y uint32) uint32 {
 	z := ^(x ^ y)
 	z &= z >> 16
 	z &= z >> 8
@@ -40,6 +38,11 @@ func ConstantTimeEqUint32(x, y uint32) uint32 {
 	return z & 1
 }
 
+// ConstantTimeEq utilizing the same strategy as ConstantTimeLessOrEqUint32 - the sign bit in int64
+func ConstantTimeEqUint32(x, y uint32) uint32 {
+	diff := int64(x) - int64(y)
+	return uint32((((diff - 1) ^ diff) >> 63) & 1)
+}
 
 func BranchingSelectUint32(v, x, y uint32) uint32 {
 	result := uint32(0)

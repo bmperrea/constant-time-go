@@ -103,8 +103,18 @@ func randUint32s(n int) []uint32 {
 	return arr
 }
 
-func zeroUint32s (n int) []uint32 {
-	return make([]uint32, n)
+// The control benchmark
+func BenchmarkNothingUint32(b *testing.B) {
+	x := randUint32s(b.N)
+	result := uint32(0)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		result &= x[i]
+	}
+	b.StopTimer()
+	if (result == 73) {
+		print("whatever")
+	}
 }
 
 // The implementation based on the one in crypto/subtle using 64bit ops internally
@@ -168,6 +178,21 @@ func BenchmarkBranchingLessOrEqUint32(b *testing.B) {
 }
 
 // The implementation based on the one in crypto/subtle
+func BenchmarkConstantTimeEqUint32Alternate(b *testing.B) {
+	x := randUint32s(b.N)
+	y := randUint32s(b.N)
+	result := uint32(0)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		result &= ConstantTimeEqUint32Alternate(x[i], y[i])
+	}
+	b.StopTimer()
+	if (result == 73) {
+		print("whatever")
+	}
+}
+
+// The implementation based on int64
 func BenchmarkConstantTimeEqUint32(b *testing.B) {
 	x := randUint32s(b.N)
 	y := randUint32s(b.N)
@@ -225,8 +250,8 @@ func BenchmarkBranchingSelectUint32(b *testing.B) {
 	}
 }
 
-// The control benchmark
-func BenchmarkNothingUint32(b *testing.B) {
+// The control benchmark again
+func BenchmarkNothingUint32Again(b *testing.B) {
 	x := randUint32s(b.N)
 	result := uint32(0)
 	b.ResetTimer()

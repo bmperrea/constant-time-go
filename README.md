@@ -63,24 +63,31 @@ $ go test --bench mark --benchtime=80ms
 goos: darwin
 goarch: amd64
 pkg: github.com/bmperrea/constant-time-go
-BenchmarkConstantTimeLessThanUint32-8   	100000000	         1.00 ns/op
-BenchmarkBranchingLessThanUint32-8      	100000000	         0.98 ns/op
-BenchmarkConstantTimeLessOrEqUint32-8   	100000000	         1.09 ns/op
-BenchmarkBranchingLessOrEqUint32-8      	100000000	         1.06 ns/op
-BenchmarkConstantTimeEqUint32-8         	50000000	         2.15 ns/op
-BenchmarkBranchingEqUint32-8            	100000000	         0.98 ns/op
-BenchmarkConstantTimeSelectUint32-8     	100000000	         1.01 ns/op
-BenchmarkBranchingSelectUint32-8        	100000000	         0.94 ns/op
-BenchmarkNothingUint32-8                	200000000	         0.55 ns/op
+BenchmarkNothingUint32-8                   	200000000	         0.63 ns/op
+BenchmarkConstantTimeLessThanUint32-8      	100000000	         1.00 ns/op
+BenchmarkBranchingLessThanUint32-8         	100000000	         0.98 ns/op
+BenchmarkConstantTimeLessOrEqUint32-8      	100000000	         1.06 ns/op
+BenchmarkBranchingLessOrEqUint32-8         	100000000	         1.07 ns/op
+BenchmarkConstantTimeEqUint32Alternate-8   	50000000	         2.14 ns/op
+BenchmarkConstantTimeEqUint32-8            	100000000	         1.09 ns/op
+BenchmarkBranchingEqUint32-8               	100000000	         0.98 ns/op
+BenchmarkConstantTimeSelectUint32-8        	100000000	         1.00 ns/op
+BenchmarkBranchingSelectUint32-8           	100000000	         0.92 ns/op
+BenchmarkNothingUint32Again-8                   	200000000	         0.63 ns/op
 PASS
-ok  	github.com/bmperrea/constant-time-go	40.696s
+ok  	github.com/bmperrea/constant-time-go	53.353s
 ```
 
 So - the overhead of the loop is pretty high, but even when we take that away, the branching case gives us for 
 the less than and lessOrEqual functions, as sell as selection, but results in a sizable speedup for equality checks. 
-In particular, after subtracting the control benchmark we get a slow down factor of (2.15 - .55) / (.98 - .55) ~ 3.7.
+In particular, after subtracting the control benchmark we get a slow down factor of (2.15 - .63) / (.98 - .63) ~ 4.
+However, an implementation based on int64 leads to a significant speedup so that the slow down is only
+(1.09 - .63) / (.98 - .63) ~ 1.3 which is significant only if the operation represents a large portion of a calculation.
+
 
 Conclusion: I recommend using the `crypto/subtle` functions instead of using branching for most situations
     since the additional computation cost is most often immeasurable, and one avoids the possibility of
-    timing attacks based on branch prediction. The only exception is with equality checks - one might want to 
-    using a branching statement to convert (a==b) to an integer before doing more bitwise operations on the result.
+    timing attacks based on branch prediction. The only possible exception is with equality checks - one might want to 
+    use a branching statement to convert (a==b) to an integer before doing more bitwise operations on the result. However,
+    a faster implementation based on int64 here improves the situation making these branch-free
+    comparisons quite practical.
