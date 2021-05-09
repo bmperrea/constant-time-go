@@ -14,7 +14,7 @@ which gives reference implementations of pure bitwise comparison functions and o
 
 for example
 ```
-func ConstantTimeLessThanUint32(x, y uint32) uint32 {
+func LessThanUint32(x, y uint32) uint32 {
 	xs := int64(x)
 	ys := int64(y)
 	// the msb keeps the sign
