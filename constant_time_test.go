@@ -1,11 +1,13 @@
-package constant_time_go
+package constant_time_test
 
-import "testing"
 import (
 	"math/rand"
+	"testing"
+
+	"github.com/bmperrea/constant-time-go"
 )
 
-func TestConstantTimeLessThanUint32(t *testing.T) {
+func TestLessThanUint32(t *testing.T) {
 	tests := []struct {
 		x uint32
 		y uint32
@@ -20,16 +22,16 @@ func TestConstantTimeLessThanUint32(t *testing.T) {
 
 	t.Logf("Running %d tests", len(tests))
 	for i, test := range tests {
-		answer := ConstantTimeLessThanUint32(test.x, test.y)
+		answer := constant_time.LessThanUint32(test.x, test.y)
 		if test.a != answer {
-			t.Errorf("ConstantTimeLessThanUint32 #%d wrong result\ngot: %v\n"+
+			t.Errorf("LessThanUint32 #%d wrong result\ngot: %v\n"+
 				"want: %v", i, answer, test.a)
 			continue
 		}
 	}
 }
 
-func TestConstantTimeLessOrEqUint32(t *testing.T) {
+func TestLessOrEqUint32(t *testing.T) {
 	tests := []struct {
 		x uint32
 		y uint32
@@ -44,16 +46,16 @@ func TestConstantTimeLessOrEqUint32(t *testing.T) {
 
 	t.Logf("Running %d tests", len(tests))
 	for i, test := range tests {
-		answer := ConstantTimeLessOrEqUint32(test.x, test.y)
+		answer := constant_time.LessOrEqUint32(test.x, test.y)
 		if test.a != answer {
-			t.Errorf("ConstantTimeLessOrEqUint32 #%d wrong result\ngot: %v\n"+
+			t.Errorf("LessOrEqUint32 #%d wrong result\ngot: %v\n"+
 				"want: %v", i, answer, test.a)
 			continue
 		}
 	}
 }
 
-func TestConstantTimeEqUint32(t *testing.T) {
+func TestEqUint32(t *testing.T) {
 	tests := []struct {
 		x uint32
 		y uint32
@@ -68,9 +70,9 @@ func TestConstantTimeEqUint32(t *testing.T) {
 
 	t.Logf("Running %d tests", len(tests))
 	for i, test := range tests {
-		answer := ConstantTimeEqUint32(test.x, test.y)
+		answer := constant_time.EqUint32(test.x, test.y)
 		if test.a != answer {
-			t.Errorf("ConstantTimeLessOrEqUint32 #%d wrong result\ngot: %v\n"+
+			t.Errorf("LessOrEqUint32 #%d wrong result\ngot: %v\n"+
 				"want: %v", i, answer, test.a)
 			continue
 		}
@@ -118,13 +120,13 @@ func BenchmarkNothingUint32(b *testing.B) {
 }
 
 // The implementation based on the one in crypto/subtle using 64bit ops internally
-func BenchmarkConstantTimeLessThanUint32(b *testing.B) {
+func BenchmarkLessThanUint32(b *testing.B) {
 	x := randUint32s(b.N)
 	y := randUint32s(b.N)
 	result := uint32(0)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		result &= ConstantTimeLessThanUint32(x[i], y[i])
+		result &= constant_time.LessThanUint32(x[i], y[i])
 	}
 	b.StopTimer()
 	if (result == 73) {
@@ -139,7 +141,7 @@ func BenchmarkBranchingLessThanUint32(b *testing.B) {
 	result := uint32(0)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		result &= BranchingLessThanUint32(x[i], y[i])
+		result &= constant_time.BranchingLessThanUint32(x[i], y[i])
 	}
 	b.StopTimer()
 	if (result == 73) {
@@ -148,13 +150,13 @@ func BenchmarkBranchingLessThanUint32(b *testing.B) {
 }
 
 // The implementation based on the one in crypto/subtle
-func BenchmarkConstantTimeLessOrEqUint32(b *testing.B) {
+func BenchmarkLessOrEqUint32(b *testing.B) {
 	x := randUint32s(b.N)
 	y := randUint32s(b.N)
 	result := uint32(0)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		result &= ConstantTimeLessOrEqUint32(x[i], y[i])
+		result &= constant_time.LessOrEqUint32(x[i], y[i])
 	}
 	b.StopTimer()
 	if (result == 73) {
@@ -169,7 +171,7 @@ func BenchmarkBranchingLessOrEqUint32(b *testing.B) {
 	result := uint32(0)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		result &= BranchingLessOrEqUint32(x[i], y[i])
+		result &= constant_time.BranchingLessOrEqUint32(x[i], y[i])
 	}
 	b.StopTimer()
 	if (result == 73) {
@@ -178,13 +180,13 @@ func BenchmarkBranchingLessOrEqUint32(b *testing.B) {
 }
 
 // The implementation based on the one in crypto/subtle
-func BenchmarkConstantTimeEqUint32Alternate(b *testing.B) {
+func BenchmarkEqUint32Alternate(b *testing.B) {
 	x := randUint32s(b.N)
 	y := randUint32s(b.N)
 	result := uint32(0)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		result &= ConstantTimeEqUint32Alternate(x[i], y[i])
+		result &= constant_time.EqUint32Alternate(x[i], y[i])
 	}
 	b.StopTimer()
 	if (result == 73) {
@@ -193,13 +195,13 @@ func BenchmarkConstantTimeEqUint32Alternate(b *testing.B) {
 }
 
 // The implementation based on int64
-func BenchmarkConstantTimeEqUint32(b *testing.B) {
+func BenchmarkEqUint32(b *testing.B) {
 	x := randUint32s(b.N)
 	y := randUint32s(b.N)
 	result := uint32(0)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		result &= ConstantTimeEqUint32(x[i], y[i])
+		result &= constant_time.EqUint32(x[i], y[i])
 	}
 	b.StopTimer()
 	if (result == 73) {
@@ -214,7 +216,7 @@ func BenchmarkBranchingEqUint32(b *testing.B) {
 	result := uint32(0)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		result &= BranchingEqUint32(x[i], y[i])
+		result &= constant_time.BranchingEqUint32(x[i], y[i])
 	}
 	b.StopTimer()
 	if (result == 73) {
@@ -223,12 +225,12 @@ func BenchmarkBranchingEqUint32(b *testing.B) {
 }
 
 // The implementation based on the one in crypto/subtle
-func BenchmarkConstantTimeSelectUint32(b *testing.B) {
+func BenchmarkSelectUint32(b *testing.B) {
 	x := randUint32s(b.N)
 	result := uint32(0)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		result &= ConstantTimeSelectUint32(x[i], 2, 1)
+		result &= constant_time.SelectUint32(x[i], 2, 1)
 	}
 	b.StopTimer()
 	if (result == 73) {
@@ -242,7 +244,7 @@ func BenchmarkBranchingSelectUint32(b *testing.B) {
 	result := uint32(0)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		result &= BranchingSelectUint32(x[i], 2, 1)
+		result &= constant_time.BranchingSelectUint32(x[i], 2, 1)
 	}
 	b.StopTimer()
 	if (result == 73) {
