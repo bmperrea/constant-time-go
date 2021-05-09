@@ -1,4 +1,4 @@
-package constant_time_go
+package constant_time
 
 var (
 	notMSB = ^(uint32(1) << 31)
@@ -12,22 +12,22 @@ var (
 // These functions are based on the sample implementation in golang.org/src/crypto/subtle/constant_time.go
 // Here we have converted these functions, and written new ones, for direct use in uint32 arithmetic
 
-// ConstantTimeSelect returns x if v is 1 and y if v is 0.
+// Select returns x if v is 1 and y if v is 0.
 // Its behavior is undefined if v takes any other value.
-func ConstantTimeSelectUint32(v, x, y uint32) uint32 { return ^(v-1)&x | (v-1)&y }
+func SelectUint32(v, x, y uint32) uint32 { return ^(v-1)&x | (v-1)&y }
 
-func ConstantTimeLessThanUint32(x, y uint32) uint32 {
+func LessThanUint32(x, y uint32) uint32 {
 	diff := int64(x) - int64(y)
 	return uint32((diff >> 63) & 1)
 }
 
-func ConstantTimeLessOrEqUint32(x, y uint32) uint32 {
+func LessOrEqUint32(x, y uint32) uint32 {
 	diff := int64(x) - int64(y)
 	return uint32(((diff - 1) >> 63) & 1)
 }
 
-// ConstantTimeEq returns 1 if x == y and 0 otherwise.
-func ConstantTimeEqUint32Alternate(x, y uint32) uint32 {
+// Eq returns 1 if x == y and 0 otherwise.
+func EqUint32Alternate(x, y uint32) uint32 {
 	z := ^(x ^ y)
 	z &= z >> 16
 	z &= z >> 8
@@ -38,8 +38,8 @@ func ConstantTimeEqUint32Alternate(x, y uint32) uint32 {
 	return z & 1
 }
 
-// ConstantTimeEq utilizing the same strategy as ConstantTimeLessOrEqUint32 - the sign bit in int64
-func ConstantTimeEqUint32(x, y uint32) uint32 {
+// Eq utilizing the same strategy as LessOrEqUint32 - the sign bit in int64
+func EqUint32(x, y uint32) uint32 {
 	diff := int64(x) - int64(y)
 	return uint32((((diff - 1) ^ diff) >> 63) & 1)
 }
